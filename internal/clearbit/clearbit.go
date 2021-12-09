@@ -34,7 +34,13 @@ func NewClearbitAPI(apiKey string) API {
 
 // TODO support optional query parameters
 func (c *clearbitClient) LookupPerson(email string) (Person, error) {
-	resp, err := c.httpClient.Get(fmt.Sprintf("%s/v2/people/find?email=%s", c.baseUrl, email))
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/people/find?email=%s", c.baseUrl, email), nil)
+	if err != nil {
+		return Person{}, err
+	}
+	req.SetBasicAuth(c.apiKey, "")
+
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return Person{}, err
 	} else if resp == nil {

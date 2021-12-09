@@ -7,7 +7,7 @@ services:
       dockerfile: build/social.Dockerfile
     environment:
       DATASTORE_PROJECT_ID: superhuman-social
-      DATASTORE_EMULATOR_HOST: 0.0.0.0:7070
+      DATASTORE_EMULATOR_HOST: datastore_emulator:7070
       GOOGLE_CLOUD_PROJECT: superhuman-social
       CLEARBIT_API_KEY: sk_49c5ad9208c03e6b0d3e4f719592efc9
       PORT: 8080
@@ -23,7 +23,6 @@ services:
       DATASTORE_LISTEN_ADDRESS: 0.0.0.0:7070
     ports:
       - "7070:7070"
-    command: --no-store-on-disk
 
   datastore_viewer:
     image: skarpdev/google-datastore-ui:1.0.0
