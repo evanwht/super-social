@@ -11,6 +11,8 @@ services:
       GOOGLE_CLOUD_PROJECT: superhuman-social
       CLEARBIT_API_KEY: sk_49c5ad9208c03e6b0d3e4f719592efc9
       PORT: 8080
+    ports:
+      - "8080:8080"
     depends_on:
       - datastore_emulator
 
