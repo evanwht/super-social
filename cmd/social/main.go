@@ -14,18 +14,12 @@ import (
 
 var (
 	clearbitAPIKey string
-	projectID      string
 )
 
 func initialize() error {
 	clearbitAPIKey = os.Getenv("CLEARBIT_API_KEY")
 	if len(clearbitAPIKey) == 0 {
 		return fmt.Errorf("clear bit api key not found")
-	}
-
-	projectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
-	if len(projectID) == 0 {
-		return fmt.Errorf("project not found")
 	}
 	return nil
 }
@@ -36,7 +30,7 @@ func main() {
 	}
 
 	clearbitAPI := clearbit.NewClearbitAPI(clearbitAPIKey)
-	db, err := database.NewDB(projectID)
+	db, err := database.NewDB()
 	if err != nil {
 		log.Fatalf("error initializing database client: %v", err)
 	}

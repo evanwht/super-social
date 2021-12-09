@@ -1,17 +1,11 @@
 package database
 
 import (
+	"context"
 	"errors"
-	"fmt"
+	"sync"
 
 	"superhuman-social/internal/models"
-
-	"cloud.google.com/go/datastore"
-	"golang.org/x/net/context"
-)
-
-const (
-	personEntityKind = "person"
 )
 
 var (
@@ -25,51 +19,38 @@ type DB interface {
 }
 
 type dbClient struct {
-	datastoreClient *datastore.Client
+	m  map[string]models.Person
+	mu sync.RWMutex
 }
 
-func NewDB(projectID string) (DB, error) {
-	c, err := datastore.NewClient(context.Background(), projectID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to make a datastore client: %v", err)
-	}
-	return &dbClient{datastoreClient: c}, nil
+func NewDB() (DB, error) {
+	return &dbClient{m: make(map[string]models.Person)}, nil
 }
 
 func (dc *dbClient) GetPerson(ctx context.Context, email string) (models.Person, error) {
-	q := datastore.NewQuery(personEntityKind).Filter("Email =", email)
-	var ps []models.Person
-	keys, err := dc.datastoreClient.GetAll(ctx, q, &ps)
-	if err != nil {
-		return models.Person{}, err
-	} else if len(keys) == 0 {
-		return models.Person{}, NotFoundErr
+	dc.mu.RLock()
+	defer dc.mu.RUnlock()
+	if p, ok := dc.m[email]; ok {
+		return p, nil
 	}
-	// TODO what if there were more than one?
-	return ps[0], nil
+	return models.Person{}, NotFoundErr
 }
 
 func (dc *dbClient) SavePerson(ctx context.Context, p *models.Person) error {
-	if p.Key != nil {
-		_, err := dc.datastoreClient.Put(ctx, p.Key, p)
-		if err != nil {
-			return err
-		}
-	} else {
-		key, err := dc.datastoreClient.Put(ctx, datastore.IncompleteKey(personEntityKind, nil), p)
-		if err != nil {
-			return err
-		}
-		p.Key = key
-	}
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+	dc.m[p.Email] = *p
 	return nil
 }
 
 func (dc *dbClient) ListAllPersons(ctx context.Context) ([]models.Person, error) {
-	q := datastore.NewQuery(personEntityKind).Order("-TimesLookedUp")
-	var ps []models.Person
-	if _, err := dc.datastoreClient.GetAll(ctx, q, &ps); err != nil {
-		return nil, err
+	dc.mu.RLock()
+	defer dc.mu.RUnlock()
+	ps := make([]models.Person, len(dc.m))
+	i := 0
+	for _, v := range dc.m {
+		ps[i] = v
+		i++
 	}
 	return ps, nil
 }
